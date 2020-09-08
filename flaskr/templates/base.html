@@ -1,0 +1,41 @@
+<!doctype html>
+<title>Idempotency Tester</title>
+<h1>Your balance is ${{ formatted_balance }}</h1>
+<form id="deposit_form" action="/transact" method="post">
+  <input type="hidden" id="existing_balance" name="existing_balance" value="{{balance}}">
+  <input type="hidden" id="idempotency_key" name="idempotency_key" value="">
+  <span>Enter a dollar amount between 1 and 100,000 to deposit into the account: </span>
+  <input type="number" id="deposit_amount" name="deposit_amount" value="1" min="1" max="100000">
+  <input type="submit">
+  <br>
+  <span>Toggle sending an <span style="font-style:italic;">idempotency key</span> with your request to safeguard against duplicate deposits should you have to resubmit: </span>
+  <input type="checkbox" id="idempotency_toggle" name="idempotency_toggle" value="">
+  <p id="key_value"></p>
+</form>
+<script>
+let current_key = localStorage.getItem('idempotency_key');
+if (current_key) {
+    document.querySelector('#idempotency_toggle').checked = true;
+    document.querySelector('#key_value').innerHTML = `Current key good for one deposit: ${current_key}`;
+}
+
+const checkbox = document.getElementById('idempotency_toggle');
+const form = document.getElementById('deposit_form');
+
+/* In case of browser crash or other hazard, we save our state in localStorage
+   which persists better than cookies. */
+checkbox.addEventListener('change', function() {
+    if (this.checked) {
+        let key = Math.random().toString(36).substr(2, 5);
+        localStorage.setItem('idempotency_key', key);
+        document.querySelector('#key_value').innerHTML = `Current key good for one deposit: ${key}`;
+    } else {
+        localStorage.removeItem('idempotency_key');
+        document.querySelector('#key_value').innerHTML = "";
+    }
+});
+
+form.addEventListener('submit', function () {
+    document.getElementById('idempotency_key').value = localStorage.getItem('idempotency_key');
+});
+</script>
